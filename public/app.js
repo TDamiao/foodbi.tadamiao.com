@@ -30,9 +30,9 @@ const state = {
 };
 
 const map = L.map('map', { zoomControl: true, doubleClickZoom: false }).setView([-14.235, -51.9253], 4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 18,
-  attribution: '&copy; OpenStreetMap contributors'
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
 }).addTo(map);
 state.markers.addTo(map);
 
