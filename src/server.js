@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import cron from 'node-cron';
+import axios from 'axios';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,20 +26,52 @@ app.use(express.json({ limit: '1mb' }));
 app.use(pinoHttp({ logger }));
 
 app.get('/app.js', (req, res) => {
-  if (!env.cartoApiKey) {
-    logger.warn('CARTO_API_KEY nao configurada; o mapa podera exibir watermark da CARTO');
-    res.type('application/javascript').send(appJsSource);
-    return;
-  }
-
-  const cartoTileUrl = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(env.cartoApiKey)}`;
   const configuredAppJs = appJsSource.replace(
     /https:\/\/\{s\}\.basemaps\.cartocdn\.com\/light_all\/\{z\}\/\{x\}\/\{y\}\{r\}\.png/,
-    cartoTileUrl
+    '/map-tiles/{z}/{x}/{y}.png'
   );
 
   res.set('Cache-Control', 'no-store');
   res.type('application/javascript').send(configuredAppJs);
+});
+
+app.get('/map-tiles/:z/:x/:y.png', async (req, res, next) => {
+  try {
+    if (!env.cartoApiKey) {
+      res.status(503).json({ error: 'CARTO_API_KEY nao configurada.' });
+      return;
+    }
+
+    const { z, x, y } = req.params;
+    if (![z, x, y].every((value) => /^\d+$/.test(value))) {
+      res.status(400).json({ error: 'Coordenadas de tile invalidas.' });
+      return;
+    }
+
+    const tileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+    const response = await axios.get(tileUrl, {
+      params: { key: env.cartoApiKey },
+      responseType: 'arraybuffer',
+      timeout: 12000,
+      headers: {
+        Referer: 'https://foodbi.tadamiao.com/',
+        'User-Agent': 'FoodBI/1.0'
+      },
+      validateStatus: () => true
+    });
+
+    if (response.status < 200 || response.status >= 300) {
+      logger.warn({ status: response.status, z, x, y }, 'CARTO recusou tile do mapa');
+      res.status(response.status).send(Buffer.from(response.data));
+      return;
+    }
+
+    res.set('Content-Type', response.headers['content-type'] || 'image/png');
+    res.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+    res.send(Buffer.from(response.data));
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use(express.static(publicDir));
