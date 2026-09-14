@@ -10,6 +10,7 @@ const intFromEnv = (key, fallback) => {
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: intFromEnv('PORT', 3000),
+  cartoApiKey: process.env.CARTO_API_KEY || '',
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
     port: intFromEnv('DB_PORT', 3306),
