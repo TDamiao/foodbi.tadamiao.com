@@ -31,7 +31,7 @@ app.get('/app.js', (req, res) => {
     return;
   }
 
-  const cartoTileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(env.cartoApiKey)}`;
+  const cartoTileUrl = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(env.cartoApiKey)}`;
   const configuredAppJs = appJsSource.replace(
     /https:\/\/\{s\}\.basemaps\.cartocdn\.com\/light_all\/\{z\}\/\{x\}\/\{y\}\{r\}\.png/,
     cartoTileUrl
