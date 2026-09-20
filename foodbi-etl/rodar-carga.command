@@ -6,6 +6,8 @@ cd "$(dirname "$0")"
 echo "FoodBI ETL - carga completa"
 echo
 
+install_dependencies=false
+
 if [ ! -x ".venv/bin/python" ]; then
   echo "Ambiente Python nao encontrado. Criando .venv..."
   if ! python3 -m venv .venv; then
@@ -14,7 +16,13 @@ if [ ! -x ".venv/bin/python" ]; then
     read "dummy?Pressione ENTER para fechar..."
     exit 1
   fi
+  install_dependencies=true
+elif ! .venv/bin/python -c 'import pymysql, requests' >/dev/null 2>&1; then
+  echo "Dependencias do ETL incompletas. Instalando novamente..."
+  install_dependencies=true
+fi
 
+if [ "$install_dependencies" = true ]; then
   echo "Instalando dependencias do ETL..."
   if ! .venv/bin/pip install -e .; then
     echo "ERRO: nao foi possivel instalar as dependencias do ETL."
