@@ -3,5 +3,6 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-downloads/
+downloads/*
+!downloads/.gitkeep
 work/

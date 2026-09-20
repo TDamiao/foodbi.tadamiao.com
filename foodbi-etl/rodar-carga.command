@@ -6,20 +6,74 @@ cd "$(dirname "$0")"
 echo "FoodBI ETL - carga completa"
 echo
 
-if [ ! -d ".venv" ]; then
-  echo "ERRO: ambiente .venv nao encontrado."
-  echo "Rode primeiro: python3 -m venv .venv && .venv/bin/pip install -e ."
+if [ ! -x ".venv/bin/python" ]; then
+  echo "Ambiente Python nao encontrado. Criando .venv..."
+  if ! python3 -m venv .venv; then
+    echo "ERRO: nao foi possivel criar o ambiente virtual. Instale o Python 3.11 ou superior."
+    echo
+    read "dummy?Pressione ENTER para fechar..."
+    exit 1
+  fi
+
+  echo "Instalando dependencias do ETL..."
+  if ! .venv/bin/pip install -e .; then
+    echo "ERRO: nao foi possivel instalar as dependencias do ETL."
+    echo
+    read "dummy?Pressione ENTER para fechar..."
+    exit 1
+  fi
+fi
+
+if [ ! -f ".env" ]; then
+  if [ ! -f ".env.example" ]; then
+    echo "ERRO: arquivo .env.example nao encontrado."
+    echo
+    read "dummy?Pressione ENTER para fechar..."
+    exit 1
+  fi
+  cp .env.example .env
+  echo "Arquivo .env criado a partir de .env.example."
+fi
+
+echo
+read -s "mysql_password?Digite a senha do MySQL (nao sera exibida): "
+echo
+
+if [ -z "$mysql_password" ]; then
+  echo "ERRO: a senha do MySQL nao pode ficar vazia."
   echo
   read "dummy?Pressione ENTER para fechar..."
   exit 1
 fi
 
-if [ ! -x ".venv/bin/python" ]; then
-  echo "ERRO: .venv/bin/python nao encontrado ou sem permissao de execucao."
+if ! printf '%s' "$mysql_password" | .venv/bin/python -c '
+from pathlib import Path
+import sys
+
+path = Path(".env")
+password = sys.stdin.read()
+lines = path.read_text(encoding="utf-8").splitlines()
+updated = False
+
+for index, line in enumerate(lines):
+    if line.startswith("MYSQL_PASSWORD="):
+        lines[index] = f"MYSQL_PASSWORD={password}"
+        updated = True
+        break
+
+if not updated:
+    lines.append(f"MYSQL_PASSWORD={password}")
+
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+'; then
+  echo "ERRO: nao foi possivel atualizar MYSQL_PASSWORD no .env."
+  unset mysql_password
   echo
   read "dummy?Pressione ENTER para fechar..."
   exit 1
 fi
+unset mysql_password
+echo "MYSQL_PASSWORD atualizado no .env local."
 
 if [ ! -d "downloads" ]; then
   echo "ERRO: pasta downloads nao encontrada."

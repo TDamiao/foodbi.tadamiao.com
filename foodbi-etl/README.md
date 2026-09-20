@@ -64,6 +64,10 @@ cp .env.example .env
 
 Preencha o `.env` com o MySQL do FoodBI Map.
 
+O arquivo `.env` e local e nao deve ser publicado. O arquivo seguro para versionar e
+o `.env.example`; o script `./rodar-carga.command` cria o `.env` automaticamente e
+solicita a senha do MySQL sem exibi-la na tela.
+
 ## Teste com uma UF
 
 ```bash
