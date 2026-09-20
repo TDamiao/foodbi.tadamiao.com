@@ -11,6 +11,9 @@ dependencies = [
 [project.scripts]
 foodbi-etl = "foodbi_etl.cli:main"
 
+[tool.setuptools.packages.find]
+include = ["foodbi_etl*"]
+
 [build-system]
 requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
